@@ -1,38 +1,31 @@
 package com.example.skinscanner
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.*
-import androidx.compose.material3.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.compose.foundation.Image
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
-import java.io.File
-import android.net.Uri
-import androidx.core.content.FileProvider
-import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.navigation.compose.rememberNavController
-import com.example.skinscanner.CameraScreen
-import com.example.skinscanner.ResultScreen
-import com.example.skinscanner.SkinScannerTheme
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import coil.compose.rememberAsyncImagePainter
+import java.io.File
+import androidx.compose.material3.CenterAlignedTopAppBar
 
 class MainActivity : ComponentActivity() {
 
@@ -45,35 +38,108 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Main navigation flow with dropdown
     @Composable
     fun AppFlow() {
+        var currentScreen by remember { mutableStateOf("home") }
         var confirmedPhotoUri by remember { mutableStateOf<Uri?>(null) }
-        var showNextStep by remember { mutableStateOf(false) }
 
-        when {
-            confirmedPhotoUri == null -> {
-                CameraScreen(
-                    onPhotoConfirmed = { uri -> confirmedPhotoUri = uri }
+        Scaffold(
+            topBar = {
+                TopAppBarWithMenu(
+                    currentScreen = currentScreen,
+                    onNavigate = { destination ->
+                        currentScreen = destination
+                        confirmedPhotoUri = null // reset when leaving scan flow
+                    }
                 )
             }
-            !showNextStep -> {
-                ResultScreen(
-                    photoUri = confirmedPhotoUri!!,
-                    onNext = { showNextStep = true }
-                )
-            }
-            else -> {
-                // Replace with your next feature screen
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Next Step Goes Here")
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                when (currentScreen) {
+                    "home" -> HomeScreen(onStartScan = { currentScreen = "camera" })
+                    "camera" -> CameraScreen(onPhotoConfirmed = { uri ->
+                        confirmedPhotoUri = uri
+                        currentScreen = "result"
+                    })
+                    "result" -> confirmedPhotoUri?.let {
+                        ResultScreen(photoUri = it, onNext = { currentScreen = "settings" })
+                    }
+                    "settings" -> SettingsScreen()
                 }
             }
         }
     }
 
+    // Simple Top Bar with Dropdown Menu
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun TopAppBarWithMenu(currentScreen: String, onNavigate: (String) -> Unit) {
+        var expanded by remember { mutableStateOf(false) }
+
+        CenterAlignedTopAppBar(
+            title = { Text("SkinScanner") },
+            actions = {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Menu"
+                    )
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Home") },
+                        onClick = {
+                            expanded = false
+                            onNavigate("home")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Scan") },
+                        onClick = {
+                            expanded = false
+                            onNavigate("camera")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Settings") },
+                        onClick = {
+                            expanded = false
+                            onNavigate("settings")
+                        }
+                    )
+                }
+            }
+        )
+    }
+
+    // Home Screen (Landing Page)
+    @Composable
+    fun HomeScreen(onStartScan: () -> Unit) {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Welcome to SkinScanner", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(24.dp))
+                Button(onClick = onStartScan) {
+                    Text("Start Scan")
+                }
+            }
+        }
+    }
+
+    // Camera + Upload Screen
     @Composable
     fun CameraScreen(onPhotoConfirmed: (Uri) -> Unit) {
         var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -156,6 +222,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Results Screen
     @Composable
     fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
         Surface(
@@ -186,17 +253,44 @@ class MainActivity : ComponentActivity() {
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Next, we can run analysis or show results here.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
+                Text("Next, we can run analysis or show results here.")
                 Spacer(modifier = Modifier.height(24.dp))
+                Button(onClick = onNext) { Text("Next") }
+            }
+        }
+    }
 
-                Button(onClick = { onNext() }) {
-                    Text("Next")
+    // Settings Screen
+    @Composable
+    fun SettingsScreen() {
+        var darkMode by remember { mutableStateOf(false) }
+        var fontSize by remember { mutableStateOf(16f) }
+
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text("Settings", style = MaterialTheme.typography.titleLarge)
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Dark Mode")
+                    Switch(checked = darkMode, onCheckedChange = { darkMode = it })
                 }
+
+                Text("Font Size: ${fontSize.toInt()}sp")
+                Slider(value = fontSize, onValueChange = { fontSize = it }, valueRange = 12f..24f)
+
+                Divider()
+                Text("Accessibility and account options coming soon…")
             }
         }
     }
