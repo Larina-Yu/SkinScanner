@@ -1,0 +1,3 @@
+filename,blur_score,brightness,quality,avg_lightness,tone,output_path
+Basal_Cell_Dark_1.jpg,1870.5468441249432,64.27887834821429,Good,103.09254717986992,Dark,D:\Final Year Project\ImageProcessing\Images\Processed\processed_Basal_Cell_Dark_1.jpg
+Melanoma_1.jpg,2492.0186821724265,139.60786033163265,Good,110.87456682747843,Dark,D:\Final Year Project\ImageProcessing\Images\Processed\processed_Melanoma_1.jpg
