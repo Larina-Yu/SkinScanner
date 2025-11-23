@@ -26,11 +26,18 @@ import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import java.io.File
 import androidx.compose.material3.CenterAlignedTopAppBar
+import android.app.Application
+import android.widget.Toast
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         setContent {
             SkinScannerTheme {
                 AppFlow()
@@ -62,9 +69,11 @@ class MainActivity : ComponentActivity() {
                         confirmedPhotoUri = uri
                         currentScreen = "result"
                     })
+
                     "result" -> confirmedPhotoUri?.let {
                         ResultScreen(photoUri = it, onNext = { currentScreen = "settings" })
                     }
+
                     "settings" -> SettingsScreen()
                 }
             }
@@ -294,4 +303,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
