@@ -3,23 +3,25 @@ package com.example.skinscanner
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.Alignment
 
 @Composable
 fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
-    var analysisResult by remember { mutableStateOf<String?>(null) }
-    var isAnalyzing by remember { mutableStateOf(false) }
-
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
@@ -35,58 +37,28 @@ fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Show full image, no cropping
             Image(
                 painter = rememberAsyncImagePainter(photoUri),
-                contentDescription = "Selected Photo",
+                contentDescription = "Confirmed Photo",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(400.dp)
-                    .padding(8.dp),
-                contentScale = ContentScale.Crop
+                    .wrapContentHeight(), // lets the image take natural height
+                contentScale = ContentScale.Fit // preserves the whole image
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (analysisResult == null) {
-                Button(
-                    onClick = {
-                        isAnalyzing = true
-                        // Run analysis
-                        analysisResult = runAnalysis(photoUri)
-                        isAnalyzing = false
-                    }
-                ) {
-                    if (isAnalyzing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Analyzing...")
-                    } else {
-                        Text("Next")
-                    }
-                }
-            } else {
-                Text(
-                    text = "Analysis Result:",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = analysisResult ?: "Error analyzing photo",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(onClick = onNext) {
-                    Text("Okay")
-                }
+            Text(
+                text = "Next, we can run analysis or show results here.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(onClick = onNext) {
+                Text("Next")
             }
         }
     }
-}
-
-// placeholder analysis function
-fun runAnalysis(photoUri: Uri): String {
-    return "This is a placeholder analysis result. Replace with real ML output."
 }

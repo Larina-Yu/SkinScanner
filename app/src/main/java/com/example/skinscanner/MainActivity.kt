@@ -26,18 +26,16 @@ import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import java.io.File
 import androidx.compose.material3.CenterAlignedTopAppBar
-import android.app.Application
-import android.widget.Toast
-import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+//import com.google.firebase.FirebaseApp
+//import com.google.firebase.auth.ktx.auth
+//import com.google.firebase.ktx.Firebase
 
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        FirebaseApp.initializeApp(this)
+        //FirebaseApp.initializeApp(this)
         setContent {
             SkinScannerTheme {
                 AppFlow()
@@ -155,11 +153,15 @@ class MainActivity : ComponentActivity() {
 
         val galleryLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
-        ) { uri: Uri? -> selectedImageUri = uri }
+        ) { uri: Uri? ->
+            if (uri != null) {
+                selectedImageUri = uri // this is usually full-res
+            }
+        }
 
-        val tempFile = File(cacheDir, "temp_photo.jpg")
+        val tempFile = File(this.cacheDir, "full_photo_${System.currentTimeMillis()}.jpg")
         val cameraUri: Uri = FileProvider.getUriForFile(
-            this@MainActivity,
+            this,
             "${packageName}.provider",
             tempFile
         )
@@ -167,7 +169,9 @@ class MainActivity : ComponentActivity() {
         val cameraLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.TakePicture()
         ) { success: Boolean ->
-            if (success) selectedImageUri = cameraUri
+            if (success) {
+                selectedImageUri = cameraUri // full-res image
+            }
         }
 
         Surface(
@@ -184,7 +188,9 @@ class MainActivity : ComponentActivity() {
                 if (selectedImageUri == null) {
                     Button(
                         onClick = { cameraLauncher.launch(cameraUri) },
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
                     ) {
                         Text("Take Photo")
                     }
@@ -201,8 +207,8 @@ class MainActivity : ComponentActivity() {
                         contentDescription = "Selected Image",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(400.dp),
-                        contentScale = ContentScale.Crop
+                            .heightIn(max = 600.dp),
+                        contentScale = ContentScale.Fit // preserves full image
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -257,8 +263,8 @@ class MainActivity : ComponentActivity() {
                     contentDescription = "Confirmed Photo",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(400.dp),
-                    contentScale = ContentScale.Crop
+                        .wrapContentHeight(), // lets the image take natural height
+                    contentScale = ContentScale.Fit // preserves the whole image
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))

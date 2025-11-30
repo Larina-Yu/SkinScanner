@@ -1,4 +1,4 @@
-package com.example.skinscanner.firebase
+/*package com.example.skinscanner.firebase
 
 import android.net.Uri
 import com.google.firebase.storage.FirebaseStorage
@@ -22,3 +22,4 @@ object FirebaseStorageManager {
             }
     }
 }
+*/

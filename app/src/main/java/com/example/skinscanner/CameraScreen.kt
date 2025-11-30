@@ -2,9 +2,8 @@ package com.example.skinscanner
 
 import android.Manifest
 import android.net.Uri
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
+import android.util.Size
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
@@ -13,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import java.io.File
@@ -20,20 +20,17 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Color
-import androidx.core.app.ActivityCompat
-import androidx.core.content.PermissionChecker
+import androidx.lifecycle.LifecycleOwner
 
 @Composable
 fun CameraScreen(navController: NavController) {
     val context = LocalContext.current
     var imageCapture: ImageCapture? = remember { null }
 
-    // Request Camera Permission if not granted
+    // Request Camera Permission
     LaunchedEffect(Unit) {
-        if (PermissionChecker.checkSelfPermission(context, Manifest.permission.CAMERA) !=
-            PermissionChecker.PERMISSION_GRANTED
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
                 context as android.app.Activity,
@@ -45,18 +42,27 @@ fun CameraScreen(navController: NavController) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         val previewView = remember { PreviewView(context) }
-        AndroidView(factory = { previewView }, modifier = Modifier.weight(1f)) { view ->
+
+        AndroidView(factory = { previewView }, modifier = Modifier.weight(1f)) {
             val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
             cameraProviderFuture.addListener({
                 val cameraProvider = cameraProviderFuture.get()
-                val preview = androidx.camera.core.Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
-                }
-                imageCapture = ImageCapture.Builder().build()
+
+                val preview = Preview.Builder()
+                    .setTargetResolution(Size(1280, 960)) // full resolution
+                    .build()
+                    .also { it.setSurfaceProvider(previewView.surfaceProvider) }
+
+                imageCapture = ImageCapture.Builder()
+                    .setTargetResolution(Size(1280, 960))
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                    .setJpegQuality(95)
+                    .build()
+
                 try {
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(
-                        context as androidx.lifecycle.LifecycleOwner,
+                        context as LifecycleOwner,
                         CameraSelector.DEFAULT_BACK_CAMERA,
                         preview,
                         imageCapture
@@ -72,15 +78,15 @@ fun CameraScreen(navController: NavController) {
                 val fileName = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
                     .format(System.currentTimeMillis()) + ".jpg"
                 val file = File(context.cacheDir, fileName)
+
                 imageCapture?.takePicture(
-                    androidx.camera.core.ImageCapture.OutputFileOptions.Builder(file).build(),
+                    ImageCapture.OutputFileOptions.Builder(file).build(),
                     ContextCompat.getMainExecutor(context),
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                             val imageUri: Uri = Uri.fromFile(file)
-                            // Placeholder: Run analysis
-                            val result = analyzeSkinImage(imageUri)
-                            navController.navigate("result/$result")
+                            // Navigate to ResultsScreen with full file URI
+                            navController.navigate("result/${imageUri}")
                         }
 
                         override fun onError(exception: ImageCaptureException) {
@@ -96,10 +102,4 @@ fun CameraScreen(navController: NavController) {
             Text("Capture Image")
         }
     }
-}
-
-// Placeholder analysis function
-fun analyzeSkinImage(imageUri: Uri): String {
-    // TODO: Replace with actual ML analysis
-    return "Skin looks healthy!"
 }

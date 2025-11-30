@@ -1,4 +1,4 @@
-package com.example.skinscanner.firebase
+/*package com.example.skinscanner.firebase
 
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -28,3 +28,4 @@ object FirebaseFirestoreManager {
             }
     }
 }
+*/

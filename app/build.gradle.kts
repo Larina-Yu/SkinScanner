@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.gms.google-services")
+    //id("com.google.gms.google-services")
 }
 
 android {
@@ -57,7 +57,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.6.0-alpha03")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.1")
+    implementation ("androidx.navigation:navigation-fragment-ktx:2.7.3")
+    implementation ("androidx.navigation:navigation-compose:2.7.3")
+
+    // Activity result API
+    implementation ("androidx.activity:activity-ktx:1.9.0")
 
     // CameraX
     implementation("androidx.camera:camera-camera2:1.2.3")
@@ -66,8 +70,13 @@ dependencies {
     implementation("androidx.camera:camera-extensions:1.2.3")
 
     //Firebase
-    implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-storage-ktx")
+    //implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
+    //implementation("com.google.firebase:firebase-auth-ktx")
+    //implementation("com.google.firebase:firebase-firestore-ktx")
+    //implementation("com.google.firebase:firebase-storage-ktx")
+
+    //machine learning
+    implementation("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
+    implementation("org.tensorflow:tensorflow-lite-metadata:0.4.3")
 }
