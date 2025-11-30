@@ -4,21 +4,25 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.rememberAsyncImagePainter
 
 @Composable
 fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
+    val context = LocalContext.current
+    val analyzer = remember { SkinAnalyzer(context) }
+
+    var analysisResult by remember { mutableStateOf("Analyzing...") }
+
+    LaunchedEffect(photoUri) {
+        analysisResult = analyzer.analyzeImage(photoUri)
+    }
+
     Surface(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
@@ -37,21 +41,20 @@ fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Show full image, no cropping
             Image(
                 painter = rememberAsyncImagePainter(photoUri),
-                contentDescription = "Confirmed Photo",
+                contentDescription = "Selected photo",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .wrapContentHeight(), // lets the image take natural height
-                contentScale = ContentScale.Fit // preserves the whole image
+                    .wrapContentHeight(),
+                contentScale = ContentScale.Fit
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Next, we can run analysis or show results here.",
-                style = MaterialTheme.typography.bodyMedium
+                text = analysisResult,
+                style = MaterialTheme.typography.titleMedium
             )
 
             Spacer(modifier = Modifier.height(24.dp))
