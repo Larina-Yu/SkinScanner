@@ -9,10 +9,11 @@ import java.nio.ByteOrder
 
 object MLAnalyzer {
 
+    //TensorFlow Lite intepreter instance
     private var interpreter: Interpreter? = null
     private const val MODEL_FILE = "skin_lesion_model.tflite"
 
-    /** Initialize interpreter once */
+    // Initialize interpreter once
     fun initialize(context: Context) {
         if (interpreter == null) {
             val assetFileDescriptor = context.assets.openFd(MODEL_FILE)
@@ -26,12 +27,14 @@ object MLAnalyzer {
         }
     }
 
-    /** Resize bitmap and normalize to [0,1] */
+    //Preprocess bitmap for model input
     private fun preprocessBitmap(bitmap: Bitmap): ByteBuffer {
         val resized = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
+        //Buffer allocation for model input
         val inputBuffer = ByteBuffer.allocateDirect(1 * 224 * 224 * 3 * 4)
         inputBuffer.order(ByteOrder.nativeOrder())
 
+        //Extract pixel data and normalise to [0,1]
         val intValues = IntArray(224 * 224)
         resized.getPixels(intValues, 0, 224, 0, 0, 224, 224)
 
@@ -47,7 +50,7 @@ object MLAnalyzer {
         return inputBuffer
     }
 
-    /** Run prediction on bitmap */
+    //Run prediction on bitmap
     suspend fun predict(bitmap: Bitmap): String {
         if (interpreter == null) {
             return "Interpreter not initialized"

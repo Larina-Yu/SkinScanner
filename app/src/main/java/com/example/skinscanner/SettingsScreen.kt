@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun SettingsScreen() {
+    //Font size setting and dark mode toggle
     var fontSize by remember { mutableStateOf(16f) }
     var darkMode by remember { mutableStateOf(false) }
 
@@ -24,6 +25,7 @@ fun SettingsScreen() {
         ) {
             Text("Settings", style = MaterialTheme.typography.titleLarge)
 
+            //Dark mode toggle function
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
@@ -32,6 +34,7 @@ fun SettingsScreen() {
                 Switch(checked = darkMode, onCheckedChange = { darkMode = it })
             }
 
+            //Slider for font size
             Text("Font Size: ${fontSize.toInt()}sp")
             Slider(
                 value = fontSize,
@@ -40,6 +43,7 @@ fun SettingsScreen() {
             )
 
             Divider()
+            //Currently a placeholder for future settings and functionalities
             Text("Account & Accessibility settings coming soon…", style = MaterialTheme.typography.bodyMedium)
         }
     }

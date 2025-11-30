@@ -27,7 +27,7 @@ fun CameraScreen(navController: NavController) {
     val context = LocalContext.current
     var imageCapture: ImageCapture? = remember { null }
 
-    // Request Camera Permission
+    // Request Camera Permission on first launch
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
             android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -43,16 +43,19 @@ fun CameraScreen(navController: NavController) {
     Column(modifier = Modifier.fillMaxSize()) {
         val previewView = remember { PreviewView(context) }
 
+        //Camera preview setup
         AndroidView(factory = { previewView }, modifier = Modifier.weight(1f)) {
             val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
             cameraProviderFuture.addListener({
                 val cameraProvider = cameraProviderFuture.get()
 
+                //Setup preview
                 val preview = Preview.Builder()
                     .setTargetResolution(Size(1280, 960)) // full resolution
                     .build()
                     .also { it.setSurfaceProvider(previewView.surfaceProvider) }
 
+                //Setup image capture
                 imageCapture = ImageCapture.Builder()
                     .setTargetResolution(Size(1280, 960))
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -73,6 +76,7 @@ fun CameraScreen(navController: NavController) {
             }, ContextCompat.getMainExecutor(context))
         }
 
+        //capture button
         Button(
             onClick = {
                 val fileName = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)

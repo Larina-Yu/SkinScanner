@@ -12,13 +12,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 
+//Screen displayed selected image and machine learning prediction
 @Composable
 fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
     val context = LocalContext.current
+    //Initializing for image processing and classification
     val analyzer = remember { SkinAnalyzer(context) }
 
+    //Holding analysis result
     var analysisResult by remember { mutableStateOf("Analyzing...") }
 
+    //Launching image analysis when screen is processed
     LaunchedEffect(photoUri) {
         analysisResult = analyzer.analyzeImage(photoUri)
     }
@@ -34,6 +38,7 @@ fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
+            //Results section
             Text(
                 text = "Here is your selected photo:",
                 style = MaterialTheme.typography.titleLarge
@@ -41,6 +46,7 @@ fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            //Displaying selected image
             Image(
                 painter = rememberAsyncImagePainter(photoUri),
                 contentDescription = "Selected photo",
@@ -52,6 +58,7 @@ fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            //Displaying analysis result
             Text(
                 text = analysisResult,
                 style = MaterialTheme.typography.titleMedium
@@ -59,9 +66,9 @@ fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(onClick = onNext) {
+            /*Button(onClick = onNext) {
                 Text("Next")
-            }
+            }*/
         }
     }
 }

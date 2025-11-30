@@ -12,7 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 
 class GalleryFragment : Fragment() {
 
-    // Register a launcher for picking images from the gallery
+    // activity result launcher for picking images from the gallery
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -26,12 +26,13 @@ class GalleryFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate your layout
+        // Inflate layout
         val view = inflater.inflate(R.layout.fragment_gallery, container, false)
 
         // Button to select an image
         val button = view.findViewById<Button>(R.id.selectImageButton)
         button.setOnClickListener {
+            //launch image picker
             pickImageLauncher.launch("image/*") // open gallery
         }
 

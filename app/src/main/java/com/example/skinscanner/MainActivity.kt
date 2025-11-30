@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
         //FirebaseApp.initializeApp(this)
         setContent {
             SkinScannerTheme {
+                //Starting main app navigation flow
                 AppFlow()
             }
         }
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
     // Main navigation flow with dropdown
     @Composable
     fun AppFlow() {
+        //Tracking current screen and storing selected image URI
         var currentScreen by remember { mutableStateOf("home") }
         var confirmedPhotoUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
                     "home" -> HomeScreen(onStartScan = { currentScreen = "camera" })
                     "camera" -> CameraScreen(onPhotoConfirmed = { uri ->
                         confirmedPhotoUri = uri
+                        //navigate to results screen
                         currentScreen = "result"
                     })
 
@@ -78,7 +81,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Simple Top Bar with Dropdown Menu
+    // Top Bar with Dropdown Menu for navigation
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun TopAppBarWithMenu(currentScreen: String, onNavigate: (String) -> Unit) {
@@ -123,7 +126,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    // Home Screen (Landing Page)
+    // Home Screen (Starting Page)
     @Composable
     fun HomeScreen(onStartScan: () -> Unit) {
         Surface(
@@ -151,6 +154,7 @@ class MainActivity : ComponentActivity() {
     fun CameraScreen(onPhotoConfirmed: (Uri) -> Unit) {
         var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
+        //Launcher for gallery upload
         val galleryLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent()
         ) { uri: Uri? ->
@@ -159,6 +163,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        //Temporary file made for camera capture
         val tempFile = File(this.cacheDir, "full_photo_${System.currentTimeMillis()}.jpg")
         val cameraUri: Uri = FileProvider.getUriForFile(
             this,
@@ -166,6 +171,7 @@ class MainActivity : ComponentActivity() {
             tempFile
         )
 
+        //Launcher for camera capture
         val cameraLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.TakePicture()
         ) { success: Boolean ->
@@ -186,6 +192,7 @@ class MainActivity : ComponentActivity() {
                 verticalArrangement = Arrangement.Center
             ) {
                 if (selectedImageUri == null) {
+                    //Shows camera/gallery buttons if no image has been selected
                     Button(
                         onClick = { cameraLauncher.launch(cameraUri) },
                         modifier = Modifier
@@ -202,6 +209,7 @@ class MainActivity : ComponentActivity() {
                         Text("Upload from Gallery")
                     }
                 } else {
+                    //Displaying selected image with confirmation options
                     Image(
                         painter = rememberAsyncImagePainter(selectedImageUri),
                         contentDescription = "Selected Image",
@@ -237,7 +245,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-//results screen
+//results screen displays selected image and machine learning predictions
     /* @Composable
         fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
             Surface(
@@ -268,7 +276,7 @@ class MainActivity : ComponentActivity() {
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
-                    //Text("Next, we can run analysis or show results here.")
+                    //Text("Show results here.")
                     Spacer(modifier = Modifier.height(24.dp))
                     //Button(onClick = onNext) { Text("Next") }
                 }
