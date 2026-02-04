@@ -1,8 +1,9 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    //id("com.google.gms.google-services")
+    id("com.google.gms.google-services")
 }
+
 
 android {
     namespace = "com.example.skinscanner"
@@ -70,13 +71,17 @@ dependencies {
     implementation("androidx.camera:camera-extensions:1.2.3")
 
     //Firebase
-    //implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
-    //implementation("com.google.firebase:firebase-auth-ktx")
-    //implementation("com.google.firebase:firebase-firestore-ktx")
-    //implementation("com.google.firebase:firebase-storage-ktx")
+    implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
 
     //machine learning
     implementation("org.tensorflow:tensorflow-lite:2.13.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
     implementation("org.tensorflow:tensorflow-lite-metadata:0.4.3")
+
+    // Debug implementation
+    //debugImplementation "androidx.compose.ui:ui-tooling:1.5.4"
 }

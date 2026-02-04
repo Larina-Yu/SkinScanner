@@ -25,17 +25,21 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil.compose.rememberAsyncImagePainter
 import java.io.File
+import androidx.navigation.compose.composable
 import androidx.compose.material3.CenterAlignedTopAppBar
-//import com.google.firebase.FirebaseApp
-//import com.google.firebase.auth.ktx.auth
-//import com.google.firebase.ktx.Firebase
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.NavHost
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //FirebaseApp.initializeApp(this)
+        FirebaseApp.initializeApp(this)
         setContent {
             SkinScannerTheme {
                 //Starting main app navigation flow
@@ -48,10 +52,66 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun AppFlow() {
         //Tracking current screen and storing selected image URI
-        var currentScreen by remember { mutableStateOf("home") }
+        //var currentScreen by remember { mutableStateOf("home") }
+        val navController = rememberNavController()
+        //var currentScreen by remember { mutableStateOf("login") } // Start with login screen
         var confirmedPhotoUri by remember { mutableStateOf<Uri?>(null) }
 
+        val auth = Firebase.auth
+        val startDestination = if (auth.currentUser != null) "home" else "auth"
+
         Scaffold(
+            topBar = {
+                TopAppBarWithMenu(
+                    currentScreen = when (navController.currentBackStackEntry?.destination?.route) {
+                        "auth" -> "auth"
+                        "login" -> "login"
+                        "register" -> "register"
+                        "home" -> "home"
+                        "camera" -> "camera"
+                        "result" -> "result"
+                        "settings" -> "settings"
+                        else -> "home"
+                    },
+                    onNavigate = { destination ->
+                        when (destination) {
+                            "home" -> navController.navigate("home")
+                            "camera" -> navController.navigate("camera")
+                            "settings" -> navController.navigate("settings")
+                        }
+                    }
+                )
+            }
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding)) {
+                NavHost(navController = navController, startDestination = startDestination) {
+                    composable("auth") { AuthScreen(navController) }
+                    composable("login") { LoginScreen(navController) }
+                    composable("register") { RegisterScreen(navController) }
+                    composable("home") {
+                        HomeScreen(
+                            onStartScan = { navController.navigate("camera") },
+                            navController = navController
+                        )
+                    }
+                    composable("camera") {
+                        CameraScreen(onPhotoConfirmed = { uri ->
+                            confirmedPhotoUri = uri
+                            navController.navigate("result")
+                        })
+                    }
+                    composable("result") {
+                        confirmedPhotoUri?.let { uri ->
+                            ResultScreen(photoUri = uri, onNext = { navController.navigate("settings") })
+                        }
+                    }
+                    composable("settings") { SettingsScreen(navController) }
+                }
+            }
+        }
+    }
+
+        /*Scaffold(
             topBar = {
                 TopAppBarWithMenu(
                     currentScreen = currentScreen,
@@ -79,7 +139,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
+    }*/
 
     // Top Bar with Dropdown Menu for navigation
     @OptIn(ExperimentalMaterial3Api::class)
@@ -286,7 +346,7 @@ class MainActivity : ComponentActivity() {
 
     // Settings Screen
     @Composable
-    fun SettingsScreen() {
+    fun SettingsScreen(navController: NavHostController) {
         var darkMode by remember { mutableStateOf(false) }
         var fontSize by remember { mutableStateOf(16f) }
 

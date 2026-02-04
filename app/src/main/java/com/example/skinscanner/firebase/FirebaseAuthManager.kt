@@ -1,4 +1,4 @@
-/*package com.example.skinscanner.firebase
+package com.example.skinscanner.firebase
 
 import com.google.firebase.auth.FirebaseAuth
 
@@ -34,4 +34,3 @@ object FirebaseAuthManager {
 
     fun currentUser() = auth.currentUser
 }
-*/

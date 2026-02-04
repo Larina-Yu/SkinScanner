@@ -7,12 +7,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.skinscanner.firebase.FirebaseAuthManager
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(onStartScan: () -> Unit, navController: NavController) {
+    val currentUser = FirebaseAuthManager.currentUser()
+    val isLoggedIn = currentUser != null
+
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
@@ -22,9 +29,29 @@ fun HomeScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Welcome to SkinScanner", style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(16.dp))
-            Button(onClick = { navController.navigate("photo") }) {
+
+            if (isLoggedIn) {
+                Text("Logged in as: ${currentUser?.email}")
+            } else {
+                Text("Guest Mode - Data will not be saved")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(onClick = onStartScan) {
                 Text("Start Scan")
+            }
+
+            if (isLoggedIn) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = {
+                    FirebaseAuthManager.logout()
+                    navController.navigate("auth") {
+                        popUpTo("auth") { inclusive = true }
+                    }
+                }) {
+                    Text("Logout")
+                }
             }
         }
     }
