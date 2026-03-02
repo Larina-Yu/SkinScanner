@@ -1,6 +1,9 @@
 package com.example.skinscanner
 
+import android.content.Context
 import android.net.Uri
+import android.net.http.HttpException
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -11,20 +14,78 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import androidx.compose.runtime.LaunchedEffect
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import android.util.Base64
+import android.util.Log
+import android.widget.Toast
+import androidx.annotation.RequiresExtension
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+
 
 //Screen displayed selected image and machine learning prediction
 @Composable
 fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
-    val context = LocalContext.current
-    //Initializing for image processing and classification
-    val analyzer = remember { SkinAnalyzer(context) }
 
-    //Holding analysis result
+    val context = LocalContext.current
+    val auth = Firebase.auth
+    val scope = rememberCoroutineScope()
+
+    // ML Analyzer placeholder
+    //val analyzer = remember { SkinAnalyzer(context) }
+
+    // Analysis result state
     var analysisResult by remember { mutableStateOf("Analyzing...") }
 
-    //Launching image analysis when screen is processed
     LaunchedEffect(photoUri) {
-        analysisResult = analyzer.analyzeImage(photoUri)
+        // Example ML analysis
+        analysisResult = withContext(Dispatchers.Default) {
+            SkinAnalyzer(context).analyzeImage(photoUri)
+        }
+
+        // Upload image to backend
+        auth.currentUser?.uid?.let { userId ->
+            val inputStream = context.contentResolver.openInputStream(photoUri)
+            val fileBytes = inputStream?.readBytes()
+            inputStream?.close()
+
+            if (fileBytes != null) {
+                val filePart = MultipartBody.Part.createFormData(
+                    "file",
+                    "image_${System.currentTimeMillis()}.jpg",
+                    RequestBody.create("image/jpeg".toMediaType(), fileBytes)
+                )
+                val userIdPart = RequestBody.create("text/plain".toMediaType(), userId)
+                val lesionTypePart = RequestBody.create("text/plain".toMediaType(), analysisResult)
+
+                scope.launch {
+                    try {
+                        val response = ApiClient.apiService.uploadImage(
+                            filePart, userIdPart, lesionTypePart
+                        )
+                        if (response.isSuccessful) {
+                            Toast.makeText(context, "Upload successful", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Log.e("ResultScreen", "Upload failed: ${response.code()}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ResultScreen", "Upload exception: ${e.message}")
+                    }
+                }
+            }
+        }
     }
 
     Surface(
@@ -66,9 +127,9 @@ fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            /*Button(onClick = onNext) {
+            Button(onClick = onNext) {
                 Text("Next")
-            }*/
+            }
         }
     }
 }

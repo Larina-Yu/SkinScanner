@@ -10,21 +10,27 @@ object FirebaseAuthManager {
 
     fun register(email: String, password: String, callback: (Boolean, String?) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                callback(true, null)
-            }
-            .addOnFailureListener { err ->
-                callback(false, err.message)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    callback(true, null)
+                } else {
+                    val errorMessage = task.exception?.message ?: "Unknown error"
+                    callback(false, errorMessage)
+                    println("Registration Error: $errorMessage")
+                }
             }
     }
 
     fun login(email: String, password: String, callback: (Boolean, String?) -> Unit) {
         auth.signInWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                callback(true, null)
-            }
-            .addOnFailureListener { err ->
-                callback(false, err.message)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    callback(true, null)
+                } else {
+                    val errorMessage = task.exception?.message ?: "Unknown error"
+                    callback(false, errorMessage)
+                    println("Login Error: $errorMessage")
+                }
             }
     }
 

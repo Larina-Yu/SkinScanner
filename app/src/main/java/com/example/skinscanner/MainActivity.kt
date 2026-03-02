@@ -33,6 +33,8 @@ import androidx.navigation.compose.NavHost
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 
 class MainActivity : ComponentActivity() {
@@ -78,6 +80,7 @@ class MainActivity : ComponentActivity() {
                             "home" -> navController.navigate("home")
                             "camera" -> navController.navigate("camera")
                             "settings" -> navController.navigate("settings")
+                            "account" -> navController.navigate("account")
                         }
                     }
                 )
@@ -96,16 +99,32 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("camera") {
                         CameraScreen(onPhotoConfirmed = { uri ->
-                            confirmedPhotoUri = uri
-                            navController.navigate("result")
+                            navController.navigate("result?photoUri=${uri}")
                         })
                     }
-                    composable("result") {
-                        confirmedPhotoUri?.let { uri ->
-                            ResultScreen(photoUri = uri, onNext = { navController.navigate("settings") })
+                    composable(
+                        "result?photoUri={photoUri}",
+                        arguments = listOf(
+                            navArgument("photoUri") { type = NavType.StringType; defaultValue = "" }
+                        )
+                    ) { backStackEntry ->
+                        val uriString = backStackEntry.arguments?.getString("photoUri")
+
+                        uriString?.takeIf { it.isNotEmpty() }?.let { uri ->
+                            ResultScreen(
+                                photoUri = Uri.parse(uri),
+                                onNext = { navController.navigate("settings") }
+                            )
                         }
+
                     }
+
                     composable("settings") { SettingsScreen(navController) }
+
+                    composable("account") {
+                        AccountScreen(navController)
+                    }
+
                 }
             }
         }
@@ -181,6 +200,15 @@ class MainActivity : ComponentActivity() {
                             onNavigate("settings")
                         }
                     )
+
+                    DropdownMenuItem(
+                        text = { Text("My Account") },
+                        onClick = {
+                            expanded = false
+                            onNavigate("account")
+                        }
+                    )
+
                 }
             }
         )

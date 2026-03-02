@@ -23,9 +23,9 @@ import androidx.camera.view.PreviewView
 import androidx.lifecycle.LifecycleOwner
 
 @Composable
-fun CameraScreen(navController: NavController) {
+fun CameraScreen(navController: NavController, userLoggedIn: Boolean) {
     val context = LocalContext.current
-    var imageCapture: ImageCapture? = remember { null }
+    var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
 
     // Request Camera Permission on first launch
     LaunchedEffect(Unit) {
@@ -89,8 +89,8 @@ fun CameraScreen(navController: NavController) {
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                             val imageUri: Uri = Uri.fromFile(file)
-                            // Navigate to ResultsScreen with full file URI
-                            navController.navigate("result/${imageUri}")
+                            // Pass userLoggedIn flag to ResultsScreen
+                            navController.navigate("result/${imageUri}?loggedIn=$userLoggedIn")
                         }
 
                         override fun onError(exception: ImageCaptureException) {
