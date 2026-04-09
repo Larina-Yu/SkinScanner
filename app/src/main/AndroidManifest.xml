@@ -40,7 +40,7 @@
                 android:resource="@xml/file_paths"/>
         </provider>
 
-        <activity android:name=".AccountActivity" />
+        <activity android:name=".AccountScreen" />
 
     </application>
 

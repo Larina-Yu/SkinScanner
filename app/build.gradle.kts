@@ -81,9 +81,9 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics-ktx")
 
     //machine learning
-    implementation("org.tensorflow:tensorflow-lite:2.13.0")
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
     implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
-    implementation("org.tensorflow:tensorflow-lite-metadata:0.4.3")
+    //implementation("org.tensorflow:tensorflow-lite-metadata:0.4.3")
 
     //Retrofit for REST API
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
@@ -95,6 +95,7 @@ dependencies {
 
     // Navigation
     implementation ("androidx.navigation:navigation-compose:2.7.3")
+    implementation(libs.litert)
 
     // Debug implementation
     //debugImplementation "androidx.compose.ui:ui-tooling:1.5.4"

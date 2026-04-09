@@ -2,6 +2,7 @@ package com.example.skinscanner
 
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,6 +28,7 @@ import coil.compose.rememberAsyncImagePainter
 import java.io.File
 import androidx.navigation.compose.composable
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
@@ -35,6 +37,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import androidx.compose.ui.platform.LocalContext
 
 
 class MainActivity : ComponentActivity() {
@@ -102,63 +105,45 @@ class MainActivity : ComponentActivity() {
                             navController.navigate("result?photoUri=${uri}")
                         })
                     }
+
                     composable(
-                        "result?photoUri={photoUri}",
+                        "result?photoUri={photoUri}&loggedIn={loggedIn}",
                         arguments = listOf(
-                            navArgument("photoUri") { type = NavType.StringType; defaultValue = "" }
+                            navArgument("photoUri") { type = NavType.StringType; defaultValue = "" },
+                            navArgument("loggedIn") { type = NavType.BoolType; defaultValue = false }
                         )
                     ) { backStackEntry ->
-                        val uriString = backStackEntry.arguments?.getString("photoUri")
-
-                        uriString?.takeIf { it.isNotEmpty() }?.let { uri ->
-                            ResultScreen(
-                                photoUri = Uri.parse(uri),
-                                onNext = { navController.navigate("settings") }
+                        val uriString = backStackEntry.arguments?.getString("photoUri") ?: ""
+                        val loggedIn = backStackEntry.arguments?.getBoolean("loggedIn") ?: false
+                        if (uriString.isNotEmpty()) {
+                            com.example.skinscanner.ResultScreen(
+                                photoUri = Uri.parse(uriString),
+                                navController = navController,
+                                onNext = {
+                                    if (loggedIn) navController.navigate("account")
+                                    else navController.navigate("settings")
+                                }
                             )
                         }
-
                     }
 
-                    composable("settings") { SettingsScreen(navController) }
+                    composable("info/{lesion?}") { backStackEntry ->
+                        val lesion = backStackEntry.arguments?.getString("lesion") ?: ""
+                        InfoScreen(navController = navController, lesion = lesion)
+                    }
+
+                    composable("guidelines") { ImageGuidelinesScreen(navController) }
 
                     composable("account") {
                         AccountScreen(navController)
                     }
 
+                    composable("settings") { SettingsScreen(navController) }
+
                 }
             }
         }
     }
-
-        /*Scaffold(
-            topBar = {
-                TopAppBarWithMenu(
-                    currentScreen = currentScreen,
-                    onNavigate = { destination ->
-                        currentScreen = destination
-                        confirmedPhotoUri = null // reset when leaving scan flow
-                    }
-                )
-            }
-        ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding)) {
-                when (currentScreen) {
-                    "home" -> HomeScreen(onStartScan = { currentScreen = "camera" })
-                    "camera" -> CameraScreen(onPhotoConfirmed = { uri ->
-                        confirmedPhotoUri = uri
-                        //navigate to results screen
-                        currentScreen = "result"
-                    })
-
-                    "result" -> confirmedPhotoUri?.let {
-                        ResultScreen(photoUri = it, onNext = { currentScreen = "settings" })
-                    }
-
-                    "settings" -> SettingsScreen()
-                }
-            }
-        }
-    }*/
 
     // Top Bar with Dropdown Menu for navigation
     @OptIn(ExperimentalMaterial3Api::class)
@@ -334,42 +319,81 @@ class MainActivity : ComponentActivity() {
     }
 
 //results screen displays selected image and machine learning predictions
-    /* @Composable
-        fun ResultScreen(photoUri: Uri, onNext: () -> Unit) {
-            Surface(
-                color = MaterialTheme.colorScheme.background,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Top
-                ) {
-                    Text(
-                        text = "Here is your selected photo:",
-                        style = MaterialTheme.typography.titleLarge
-                    )
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ResultScreen(photoUri: Uri, navController: NavHostController, onNext: () -> Unit = {}) {
+    val context = LocalContext.current
+    var cancerType by remember { mutableStateOf("Analyzing...") }
+    var predictionScore by remember { mutableStateOf(0f) }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+    LaunchedEffect(photoUri) {
+        try {
+            val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, photoUri)
+            MLAnalyzer.initialize(context)
 
-                    Image(
-                        painter = rememberAsyncImagePainter(photoUri),
-                        contentDescription = "Confirmed Photo",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-                        contentScale = ContentScale.Fit
-                    )
+            // Call suspend function properly
+            val prediction = MLAnalyzer.predict(bitmap)
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    //Text("Show results here.")
-                    Spacer(modifier = Modifier.height(24.dp))
-                    //Button(onClick = onNext) { Text("Next") }
-                }
+            cancerType = when (prediction.label.lowercase()) {
+                "mel" -> "Melanoma"
+                "nv" -> "Nevus"
+                "bcc" -> "Basal Cell Carcinoma"
+                "akiec" -> "Actinic Keratosis"
+                "bkl" -> "Benign Keratosis"
+                "df" -> "Dermatofibroma"
+                "vasc" -> "Vascular Lesion"
+                else -> "Unknown"
             }
-        }*/
+
+            predictionScore = prediction.confidence
+        } catch (e: Exception) {
+            cancerType = "Error processing image"
+            predictionScore = 0f
+            e.printStackTrace()
+        }
+    }
+
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Scan Result") }) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Selected Image:", style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(16.dp))
+
+            Image(
+                painter = rememberAsyncImagePainter(photoUri),
+                contentDescription = "Selected Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+            )
+
+            Spacer(Modifier.height(24.dp))
+            Text("Prediction: $cancerType", style = MaterialTheme.typography.titleMedium)
+            Text("Confidence: ${(predictionScore * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium)
+
+            Spacer(Modifier.height(16.dp))
+            val riskMessage = when {
+                predictionScore > 0.75 -> "High risk – please consult a medical professional."
+                predictionScore > 0.5 -> "Moderate risk – consider getting this checked."
+                predictionScore > 0.25 -> "Low risk – monitor for changes."
+                else -> "Very low confidence – result may be unreliable."
+            }
+            Text(riskMessage, style = MaterialTheme.typography.bodyMedium)
+
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onNext) {
+                Text("Next / Account")
+            }
+        }
+    }
+}
 
 
     // Settings Screen

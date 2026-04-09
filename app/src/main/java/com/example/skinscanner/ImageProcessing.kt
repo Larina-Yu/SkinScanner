@@ -1,59 +1,30 @@
-/*package com.example.skinscanner
+package com.example.skinscanner
 
 import android.graphics.Bitmap
-import kotlin.math.atan
-import kotlin.math.PI
+import kotlin.math.abs
 
 object ImageProcessingUtils {
 
-    fun calculateITA(bitmap: Bitmap): Double {
+    fun calculateSkinProportion(bitmap: Bitmap): Double {
+        var skinPixels = 0
+        val totalPixels = bitmap.width * bitmap.height
 
-        val width = bitmap.width
-        val height = bitmap.height
+        val pixels = IntArray(totalPixels)
+        bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
 
-        var totalITA = 0.0
-        var pixelCount = 0
+        for (pixel in pixels) {
+            val r = (pixel shr 16) and 0xFF
+            val g = (pixel shr 8) and 0xFF
+            val b = pixel and 0xFF
 
-        for (x in 0 until width step 5) {
-            for (y in 0 until height step 5) {
+            val isSkin = r > 95 && g > 40 && b > 20 &&
+                    r > g && r > b &&
+                    abs(r - g) > 15 &&
+                    !(r < 60 && g < 60 && b < 60)
 
-                val pixel = bitmap.getPixel(x, y)
-
-                val r = (pixel shr 16 and 0xFF).toDouble()
-                val g = (pixel shr 8 and 0xFF).toDouble()
-                val b = (pixel and 0xFF).toDouble()
-
-                // Convert RGB to CIE Lab (simplified)
-                val L = 0.2126*r + 0.7152*g + 0.0722*b
-                val B = b - g
-
-                if (B != 0.0) {
-                    val ita = (atan((L - 50) / B) * 180 / PI)
-                    totalITA += ita
-                    pixelCount++
-                }
-            }
+            if (isSkin) skinPixels++
         }
 
-        return if (pixelCount > 0) totalITA / pixelCount else 0.0
-    }
-
-    fun itaToSkinType(ita: Double): String {
-        return when {
-            ita > 40 -> "I-II"
-            ita > 28 -> "III"
-            ita > 10 -> "IV"
-            ita > -30 -> "V"
-            else -> "VI"
-        }
+        return if (totalPixels > 0) skinPixels.toDouble() / totalPixels else 0.0
     }
 }
-
-//database store
-val ita = ImageProcessingUtils.calculateITA(bitmap)
-val skinType = ImageProcessingUtils.itaToSkinType(ita)
-
-Log.d("ITA", "ITA Value: $ita")
-Log.d("ITA", "Skin Type: $skinType")
-
- */

@@ -89,7 +89,26 @@ fun CameraScreen(navController: NavController, userLoggedIn: Boolean) {
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                             val imageUri: Uri = Uri.fromFile(file)
-                            // Pass userLoggedIn flag to ResultsScreen
+
+                            // Save to gallery
+                            val values = android.content.ContentValues().apply {
+                                put(android.provider.MediaStore.Images.Media.DISPLAY_NAME, file.name)
+                                put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                                put(android.provider.MediaStore.Images.Media.RELATIVE_PATH, "Pictures/SkinScanner")
+                            }
+
+                            val resolver = context.contentResolver
+                            val uri = resolver.insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+
+                            uri?.let {
+                                val outputStream = resolver.openOutputStream(it)
+                                val inputStream = file.inputStream()
+                                inputStream.copyTo(outputStream!!)
+                                outputStream.close()
+                                inputStream.close()
+                            }
+
+                            // Navigate after saving
                             navController.navigate("result/${imageUri}?loggedIn=$userLoggedIn")
                         }
 
@@ -104,6 +123,13 @@ fun CameraScreen(navController: NavController, userLoggedIn: Boolean) {
                 .padding(16.dp)
         ) {
             Text("Capture Image")
+        }
+
+        Button(
+            onClick = { navController.navigate("guidelines") },
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Text("See Guidelines")
         }
     }
 }

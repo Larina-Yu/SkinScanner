@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
+import com.example.skinscanner.firebase.FirebaseAuthManager
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import retrofit2.Call
@@ -31,7 +32,7 @@ fun AccountScreen(navController: NavHostController) {
                     response: Response<List<ImageData>>
                 ) {
                     if (response.isSuccessful) {
-                        images = response.body() ?: emptyList()
+                        images = (response.body() ?: emptyList()).reversed()
                     }
                 }
 
@@ -64,7 +65,8 @@ fun AccountScreen(navController: NavHostController) {
 
                         Image(
                             painter = rememberAsyncImagePainter(
-                                "http://192.168.1.4:5000/${image.filename}"
+                                //"http://10.156.37.22:5000/${image.filename}"
+                                "http://192.168.1.4:5000/images/${image.filename}"
                             ),
                             contentDescription = null,
                             modifier = Modifier
@@ -77,6 +79,51 @@ fun AccountScreen(navController: NavHostController) {
                         Text("Prediction: ${image.lesion_type}")
                         Text("Uploaded: ${image.upload_date}")
                     }
+
+                    Button(onClick = {
+                        RetrofitClient.instance.deleteImage(image.filename)
+                            .enqueue(object : Callback<Void> {
+                                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                    images = images.filter { it.filename != image.filename }
+                                }
+
+                                override fun onFailure(call: Call<Void>, t: Throwable) {
+                                    t.printStackTrace()
+                                }
+                            })
+                    }) {
+                        Text("Delete")
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = {
+                        val user = FirebaseAuthManager.currentUser()
+                        user?.let {
+                            // Call backend delete
+                            RetrofitClient.instance.deleteUser(it.uid)
+                                .enqueue(object : Callback<Void> {
+                                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                        FirebaseAuthManager.logout()
+                                        navController.navigate("auth") {
+                                            popUpTo("auth") { inclusive = true }
+                                        }
+                                    }
+
+                                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                                        t.printStackTrace()
+                                    }
+                                })
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Delete Account")
                 }
             }
         }

@@ -42,6 +42,13 @@ fun HomeScreen(onStartScan: () -> Unit, navController: NavController) {
                 Text("Start Scan")
             }
 
+            Button(
+                onClick = { navController.navigate("guidelines") },
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+            ) {
+                Text("Image Guidelines")
+            }
+
             if (isLoggedIn) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = {
